@@ -2,26 +2,21 @@ cmake_minimum_required(VERSION 3.14)
 
 project(M3iTimeMeasure)
 
-include_directories(src/rels)
+file(GLOB RELS_LIST src/rels/*)
+list(LENGTH RELS_LIST RELS_COUNT)
+math(EXPR RELS_END "${RELS_COUNT} - 1")
+message(STATUS "[M3i_STATUS] Found realisatinos [0..=${RELS_END}]")
 
-######### LIBS #########
+foreach(i RANGE 0 ${RELS_END})
+    message(STATUS "[M3i_STATUS] Working with src/rels/${i}")
+    message(STATUS "[M3i_STATUS] Adding library m3i_${i}")
+    add_library(m3i_${i} src/rels/${i}/m3i.cpp)
+    target_include_directories(m3i_${i} PRIVATE src/rels/${i}/)
 
-add_library(m3i0 src/rels/m3i_0.cpp)
-target_compile_definitions(m3i0 PUBLIC -DREL0)
-
-add_library(m3i1 src/rels/m3i_1.cpp)
-target_compile_definitions(m3i1 PUBLIC -DREL1)
-
-add_library(m3i2 src/rels/m3i_2.cpp)
-target_compile_definitions(m3i2 PUBLIC -DREL2)
-
-##### REALIZATIONS #####
-
-add_executable(rel0 src/rels/m3i/m3i.h src/measure/measure.cpp)
-target_link_libraries(rel0 m3i0)
-
-add_executable(rel1 src/rels/m3i/m3i.h src/measure/measure.cpp)
-target_link_libraries(rel1 m3i1)
-
-add_executable(rel2 src/rels/m3i/m3i.h src/measure/measure.cpp)
-target_link_libraries(rel2 m3i2)
+    message(STATUS "[M3i_STATUS] Adding executable measure_${i}")
+    add_executable(measure_${i} src/measure/measure.cpp)
+    target_include_directories(measure_${i} PRIVATE src/rels/${i}/)
+    target_link_libraries(measure_${i} m3i_${i})
+    
+    message(STATUS "[M3i_STATUS] Done")
+endforeach()
