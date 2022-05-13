@@ -55,28 +55,12 @@ where
     */
    ```
 
-   
-
-3. Переименовываем `m3i.h` и `m3i.cpp` в `m3i_5.h` и `m3i_5.cpp` и перемещаемих в папку `src/rels`
-
-4. Открываем `src/m3i/m3i.h` и добавляем в конец следующие строчки:
+3. Открываем `m3i.cpp` и удостоверяемся, что инклуд хедера выглядит **В ТОЧНОСТИ** так:
 
    ```c++
-   #ifdef REL5
-   #include <m3i_5.h>
-   #endif
+   #include <m3i.h>
    ```
-
-   Открываем `CMakeLists.txt` и добавляем свою библиотеку и исполняемый файл:
-
-   ```cmake
-   add_library(m3i5 src/rels/m3i_5.cpp)
-   target_compile_definitions(m3i5 PUBLIC -DREL5)
-   // ...
-   add_executable(rel5 src/rels/m3i/m3i.h src/measure/measure.cpp)
-   target_link_libraries(rel5 m3i5)
-   
-   ```
+4. Копируем получившиеся файлы `m3i.h` и `m3i.cpp` в `src/rels/5/`
 
 5. Делаем коммит и пуш в _master_ (шаг обязателен! там лицензия!:) )
 
