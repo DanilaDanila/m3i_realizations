@@ -14,11 +14,11 @@ $ cmake --build build
 
 ### Артефакты сборки
 
-В папке `build/` появились файлы `rel0`, `rel1`...
-Каждый из низ них умеет запускать измерение времени для каждой реализации
+В папке `build/` появились файлы `measure_0`, `measure_1`...
+Каждый из низ них умеет запускать измерение времени для соответствующей реализации
 
 ```bash
-Usage: ./build/rel0 <size> <times> <fill>
+Usage: ./build/measure_0 <size> <times> <fill>
 where
         <size> - size of cube
         <times> - times measure
