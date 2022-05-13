@@ -1,4 +1,4 @@
-#include <m3i/m3i.h>
+#include <m3i.h>
 
 #include <cassert>
 #include <chrono>
