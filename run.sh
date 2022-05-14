@@ -6,6 +6,8 @@ CSV_OUTPUT_DIR=csvs
 LOG=/tmp/m3ilog.log
 
 cd $(dirname $0)
+echo "" > $LOG
+date > $LOG
 
 function status { 
     STATUS="\033[0;32m"
@@ -14,17 +16,17 @@ function status {
     printf "${NC}[${STATUS}STATUS${NC}] "
     echo $@
 
-    printf "${NC}[${STATUS}STATUS${NC}] " 1>$LOG 2>$LOG
-    echo $@ 1>$LOG 2>$LOG
+    printf "[STATUS] " 1>>$LOG 2>>$LOG
+    echo $@ 1>>$LOG 2>>$LOG
 }
 
 status Script $0 started
 
 status Generating cmake-files
-cmake -S . -B build 1>$LOG 2>$LOG
+cmake -S . -B build 1>>$LOG 2>>$LOG
 
 status Building...
-cmake --build build 1>$LOG 2>$LOG
+cmake --build build 1>>$LOG 2>>$LOG
 
 status Build done!
 
@@ -85,8 +87,9 @@ for size0 in 10 100 1000
             fi
 
             status "Measuring M3i($size0, $size1, $size2)"
-            for testfile in $(ls build/measure_*)
+            for i in 2 3
             {
+                testfile="build/measure_"$i
                 status "Test: $testfile"
                 out_csv=$CSV_WORK_DIR/reord_$(basename $testfile)
                 echo -n $size0"_"$size1"_"$size2", " >> $out_csv
@@ -103,8 +106,9 @@ for size0 in 10 100 1000
             }
 
             status "Measuring M3i($size0, $size1, $size2, 2)"
-            for testfile in $(ls build/measure_*)
+            for i in 2 3
             {
+                testfile="build/measure_"$i
                 status "Test: $testfile"
                 out_csv=$CSV_WORK_DIR/reord_$(basename $testfile)
                 echo -n $size0"_"$size1"_"$size2", " >> $out_csv
@@ -137,7 +141,7 @@ for file in $(ls $CSV_WORK_DIR)
             }
             print str
         }
-    }' $fpath | sed "s/ //g" | sed "s/,$//g" > $CSV_OUTPUT_DIR/$file.csv
+    }' $fpath | sed "s/ //g" | sed "s/,$//g" > $fpath.csv
 }
 
 status Cleaning
