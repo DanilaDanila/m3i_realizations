@@ -28,7 +28,7 @@ mkdir -p $CSV_WORK_DIR
 rm -rf $CSV_WORK_DIR/*
 rm -rf $CSV_OUTPUT_DIR/*
 
-for size in 10 100 1000
+for size in 10 $(seq 100 100 1000)
 {
     status "Measuring M3i($size, $size, $size)"
     for testfile in $(ls build/measure_*)
