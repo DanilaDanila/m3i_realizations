@@ -37,8 +37,9 @@ rm -rf $CSV_OUTPUT_DIR/*
 for size in 10 $(seq 100 100 1000)
 {
     status "Measuring M3i($size, $size, $size)"
-    for testfile in 0 3
+    for i in 0 3
     {
+        testfile="build/measure_"$i
         status "Test: $testfile"
         out_csv=$CSV_WORK_DIR/$(basename $testfile)
         echo -n $size"_iii, " >> $out_csv
@@ -55,8 +56,9 @@ for size in 10 $(seq 100 100 1000)
     }
 
     status "Measuring M3i($size, $size, $size, 1)"
-    for testfile in 0 3
+    for i in 0 3
     {
+        testfile="build/measure_"$i
         status "Test: $testfile"
         out_csv=$CSV_WORK_DIR/$(basename $testfile)
         echo -n $size"_iii1, " >> $out_csv
