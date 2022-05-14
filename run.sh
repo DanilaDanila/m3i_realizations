@@ -143,8 +143,8 @@ for file in $(ls $CSV_WORK_DIR)
             }
             print str
         }
-    }' $fpath | sed "s/ //g" | sed "s/,$//g" > $fpath.csv
+    }' $fpath | sed "s/ //g" | sed "s/,$//g" > $CSV_OUTPUT_DIR/$file.csv
 }
 
-status Cleaning
-rm -rf $CSV_WORK_DIR
+# status Cleaning
+# rm -rf $CSV_WORK_DIR
