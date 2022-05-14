@@ -1,8 +1,9 @@
 #!/bin/bash
 
-MEASURE_N_TIMES=15
+MEASURE_N_TIMES=100
 CSV_WORK_DIR=tests_output
 CSV_OUTPUT_DIR=csvs
+LOG=/tmp/m3ilog.log
 
 cd $(dirname $0)
 
@@ -12,15 +13,18 @@ function status {
 
     printf "${NC}[${STATUS}STATUS${NC}] "
     echo $@
+
+    printf "${NC}[${STATUS}STATUS${NC}] " 1>$LOG 2>$LOG
+    echo $@ 1>$LOG 2>$LOG
 }
 
 status Script $0 started
 
 status Generating cmake-files
-cmake -S . -B build
+cmake -S . -B build 1>$LOG 2>$LOG
 
 status Building...
-cmake --build build
+cmake --build build 1>$LOG 2>$LOG
 
 status Build done!
 
