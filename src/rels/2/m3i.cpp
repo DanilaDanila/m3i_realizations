@@ -43,7 +43,6 @@ M3i::M3i(int d0, int d1, int d2, int fill) {
   for (int i = 0; i < d0; ++i) {
       tensor->data[i] = new int *[d1];
       for (int j = 0; j < d1; ++j) {
-          tensor->data[i][j] = new int[d2];
           if (fill == 0) {
               tensor->data[i][j] = new int[d2]();
           } else {
