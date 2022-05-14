@@ -34,8 +34,10 @@ uint64_t measure(int x, int y, int z, int fill) {
 }
 
 int main(int argc, char **argv) {
-  if (argc != 4) {
-    std::cout << "Usage: " << argv[0] << " <size> <times> <fill>" << std::endl;
+  if (argc != 4 && argc != 6) {
+    std::cout << "Usage: " << argv[0]
+              << " <size> / [<size0> <size1> <size2>] <times> <fill>"
+              << std::endl;
     std::cout << "where\n\t";
     std::cout << "<size> - size of cube\n\t";
     std::cout << "<times> - times measure\n\t";
@@ -47,13 +49,25 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  int size = atoi(argv[1]);
-  int times = atoi(argv[2]);
-  int fill_with = atoi(argv[3]);
+  int size0, size1, size2;
+  int times;
+  int fill_with;
+
+  if (argc == 4) {
+    size0 = size1 = size2 = atoi(argv[1]);
+    times = atoi(argv[2]);
+    fill_with = atoi(argv[3]);
+  } else /* argc == 6 */ {
+    size0 = atoi(argv[1]);
+    size1 = atoi(argv[2]);
+    size2 = atoi(argv[3]);
+    times = atoi(argv[4]);
+    fill_with = atoi(argv[5]);
+  }
 
   for (int i = 0; i < times; ++i) {
     std::cerr << "\r\tprogress: " << i + 1 << " / " << times;
-    std::cout << measure(size, size, size, fill_with) << ", ";
+    std::cout << measure(size0, size1, size2, fill_with) << ", ";
   }
   std::cout << std::endl;
   std::cerr << "\n";

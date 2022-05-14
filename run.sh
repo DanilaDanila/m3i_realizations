@@ -58,6 +58,58 @@ for size in 10 $(seq 100 100 1000)
     }
 }
 
+status Measure reordering
+for size0 in 10 100 1000
+{
+    for size1 in 10 100 1000
+    {
+        if [[ $size0 == $size1 ]]
+        then
+            continue
+        fi
+
+        for size2 in 10 100 1000
+        {
+            if [[ $size0 == $size2 ]]
+            then
+                continue
+            fi
+
+            if [[ $size1 == $size2 ]]
+            then
+                continue
+            fi
+
+            status "Measuring M3i($size0, $size1, $size2)"
+            for testfile in $(ls build/measure_*)
+            {
+                status "Test: $testfile"
+                out_csv=$CSV_WORK_DIR/reord_$(basename $testfile)
+                echo -n $size0"_"$size1"_"$size2", " >> $out_csv
+                ./$testfile $size0 $size1 $size2 $MEASURE_N_TIMES -1 >> $out_csv
+            }
+
+            status "Measuring M3i($size0, $size1, $size2, 0)"
+            for testfile in $(ls build/measure_*)
+            {
+                status "Test: $testfile"
+                out_csv=$CSV_WORK_DIR/reord_$(basename $testfile)
+                echo -n $size0"_"$size1"_"$size2", " >> $out_csv
+                ./$testfile $size0 $size1 $size2 $MEASURE_N_TIMES 0 >> $out_csv
+            }
+
+            status "Measuring M3i($size0, $size1, $size2, 2)"
+            for testfile in $(ls build/measure_*)
+            {
+                status "Test: $testfile"
+                out_csv=$CSV_WORK_DIR/reord_$(basename $testfile)
+                echo -n $size0"_"$size1"_"$size2", " >> $out_csv
+                ./$testfile $size0 $size1 $size2 $MEASURE_N_TIMES 1 >> $out_csv
+            }
+        }
+    }
+}
+
 status Measuring done!
 
 mkdir -p $CSV_OUTPUT_DIR
