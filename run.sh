@@ -37,7 +37,7 @@ rm -rf $CSV_OUTPUT_DIR/*
 for size in 10 $(seq 100 100 1000)
 {
     status "Measuring M3i($size, $size, $size)"
-    for testfile in $(ls build/measure_*)
+    for testfile in 0 3
     {
         status "Test: $testfile"
         out_csv=$CSV_WORK_DIR/$(basename $testfile)
@@ -55,7 +55,7 @@ for size in 10 $(seq 100 100 1000)
     }
 
     status "Measuring M3i($size, $size, $size, 1)"
-    for testfile in $(ls build/measure_*)
+    for testfile in 0 3
     {
         status "Test: $testfile"
         out_csv=$CSV_WORK_DIR/$(basename $testfile)
@@ -87,7 +87,7 @@ for size0 in 10 100 1000
             fi
 
             status "Measuring M3i($size0, $size1, $size2)"
-            for i in 2 3
+            for i in 0 3
             {
                 testfile="build/measure_"$i
                 status "Test: $testfile"
@@ -106,7 +106,7 @@ for size0 in 10 100 1000
             }
 
             status "Measuring M3i($size0, $size1, $size2, 2)"
-            for i in 2 3
+            for i in 0 3
             {
                 testfile="build/measure_"$i
                 status "Test: $testfile"
