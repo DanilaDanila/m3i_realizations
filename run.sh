@@ -33,7 +33,7 @@ for size in 10 100 1000
     status "Measuring M3i($size, $size, $size)"
     for testfile in $(ls build/measure_*)
     {
-        status "\tTest: $testfile"
+        status "Test: $testfile"
         out_csv=$CSV_WORK_DIR/$(basename $testfile)
         echo -n $size"_iii, " >> $out_csv
         ./$testfile $size $MEASURE_N_TIMES -1 >> $out_csv
@@ -42,7 +42,7 @@ for size in 10 100 1000
     status "Measuring M3i($size, $size, $size, 0)"
     for testfile in $(ls build/measure_*)
     {
-        status "\tTest: $testfile"
+        status "Test: $testfile"
         out_csv=$CSV_WORK_DIR/$(basename $testfile)
         echo -n $size"_iii0, " >> $out_csv
         ./$testfile $size $MEASURE_N_TIMES 0 >> $out_csv
@@ -51,7 +51,7 @@ for size in 10 100 1000
     status "Measuring M3i($size, $size, $size, 1)"
     for testfile in $(ls build/measure_*)
     {
-        status "\tTest: $testfile"
+        status "Test: $testfile"
         out_csv=$CSV_WORK_DIR/$(basename $testfile)
         echo -n $size"_iii1, " >> $out_csv
         ./$testfile $size $MEASURE_N_TIMES 1 >> $out_csv
