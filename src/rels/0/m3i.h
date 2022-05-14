@@ -72,7 +72,7 @@ class M3i {
     int capacity = 0;
     int *data = nullptr;
     std::mutex mutex;
-    std::atomic_int16_t ref_counter = 1;
+    std::atomic_int16_t ref_counter{1};
   } *tensor = nullptr;
 };
 
