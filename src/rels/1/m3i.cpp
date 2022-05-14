@@ -144,9 +144,14 @@ void M3i::free() {
   lock_guard(tensor->mutex);
 
   if (--tensor->ref_counter == 0) {
+    for (int i = 0; i < tensor->shape[0]; ++i) {
+      for (int j = 0; j < tensor->shape[1]; ++j) {
+        delete[] tensor->data[i][j];
+      }
+      delete[] tensor->data[i];
+    }
     delete[] tensor->data;
     delete tensor;
   }
-
   tensor = nullptr;
 }
