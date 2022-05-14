@@ -52,8 +52,11 @@ int main(int argc, char **argv) {
   int fill_with = atoi(argv[3]);
 
   for (int i = 0; i < times; ++i) {
-    std::cout << measure(size, size, size, fill_with) << std::endl;
+    std::cerr << "\r\tprogress: " << i + 1 << " / " << times;
+    std::cout << measure(size, size, size, fill_with) << ", ";
   }
+  std::cout << std::endl;
+  std::cerr << "\n";
 
   return 0;
 }
