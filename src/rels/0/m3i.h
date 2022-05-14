@@ -1,83 +1,57 @@
-/*
- * Реализация int* с оптимизацией заполнения нулями
- */
+//int *** + every
 
-#ifndef M3I_H
-#define M3I_H
+#ifndef __M3I_LAB_H__
+#define __M3I_LAB_H__
 
-#include <atomic>
-#include <initializer_list>
-#include <iosfwd>
-#include <memory>
+#include<iostream>
+#include<initializer_list>
 #include <mutex>
+#include <atomic>
 
 class M3i {
- public:
-  M3i();
+public:
+    M3i();
+    M3i(const int x, const int y, const int z);
+    M3i(const int x, const int y, const int z, const int default_value);
+    M3i(const std::initializer_list<std::initializer_list<std::initializer_list<int>>>& list);
 
-  // {{{123}, {123}}, {{123}, {123}}, {{123}, {123}}, ...}
-  M3i(std::initializer_list<std::initializer_list<std::initializer_list<int>>>);
+    M3i(const M3i&); //конструктор копирования
+    M3i& operator=(const M3i&); //присваивание копированием
+    M3i(M3i&&); //конструктор перемещения
+    M3i& operator=(M3i&&); //присваивание перемещением
 
-  // except: хотя бы один из индексов меньше нуля
-  M3i(int d0, int d1, int d2);  // незаполняющий конструктор
-  M3i(int d0, int d1, int d2, int fill_with);  // заполняющий конструктор
+    ~M3i();
 
-  // легкая копия(подсчет ссылок)
-  M3i(const M3i &other);
+    M3i Clone() const;
 
-  // легкая копия(подсчет ссылок)
-  M3i &operator=(const M3i &other);
+    M3i& Resize(const int x, const int y, const int z);
 
-  M3i(M3i &&other);
-  M3i &operator=(M3i &&other);
+    int At(const int x, const int y, const int z) const;
+    int& At(const int x, const int y, const int z);
 
-  ~M3i();
+    int Size(const int dim) const;
+    void Fill(const int value);
 
-  // полная копия данных
-  M3i Clone() const;
+private:
+    struct Data {
+        Data() = default;
+        Data(int*** values, int* shape_other, int ref_counter) : values(values), ref_counter(ref_counter) {
+            shape[0] = shape_other[0];
+            shape[1] = shape_other[1];
+            shape[2] = shape_other[2];
+        }
+        int*** values = nullptr;
+        int shape[3] = {0, 0, 0};
+        std::atomic<int> ref_counter;
+        std::mutex mutex;
+    };
+    
+    Data* data;
 
-  // except: хотя бы один из индексов меньше нуля или больше
-  // соответствующей размерности
-  M3i &Resize(int d0, int d1, int d2);
-
-  // except: хотя бы один из индексов меньше нуля или больше
-  // соответствующей размерности
-  int &At(int i, int j, int k);
-
-  // except: хотя бы один из индексов меньше нуля или больше
-  // соответствующей размерности
-  int At(int i, int j, int k) const;
-
-  // получение размера по измерению 0, 1, 2
-  // except: dim < 0 or dim > 2
-  int Size(int dim) const;
-
-  // заполнение одним и тем же значением
-  void Fill(int val);
-
-  std::ostream &WriteTo(std::ostream &) const;
-  std::istream &ReadFrom(std::istream &);
-
- private:
-  void CheckDims();
-
-  void CheckDims(int d0, int d1, int d2) const;
-
-  void CheckIndexes(int i, int j, int k) const;
-
-  void free();
-
-  struct Tensor {
-    int shape[3] = {0};
-    int capacity = 0;
-    int *data = nullptr;
-    std::mutex mutex;
-    std::atomic_int16_t ref_counter{1};
-  } *tensor = nullptr;
+    void deleteCurrent();
 };
 
-std::istream &operator>>(std::istream &, M3i &);
+std::istream& operator>>(std::istream& istrm, M3i& m);
+std::ostream& operator<<(std::ostream& ostrm, const M3i& m);
 
-std::ostream &operator<<(std::ostream &, const M3i &);
-
-#endif  // M3I_H
+#endif //__M3I_LAB_H__

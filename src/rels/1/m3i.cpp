@@ -29,9 +29,14 @@ M3i::M3i(const int x, const int y, const int z, const int default_value) {
     for (int i = 0; i < x; ++i) {
         values[i] = new int *[y];
         for (int j = 0; j < y; ++j) {
-            values[i][j] = new int[z];
-            for (int k = 0; k < z; ++k) {
-                values[i][j][k] = default_value;
+            if (default_value == 0) {
+                values[i][j] = new int[z]();
+                continue;
+            } else {
+                values[i][j] = new int[z];
+                for (int k = 0; k < z; ++k) {
+                    values[i][j][k] = default_value;
+                }
             }
         }
     }

@@ -1,241 +1,186 @@
-#include "m3i.h"
+#include <m3i.h>
 
 #include <cstring>
-#include <iostream>
 #include <stdexcept>
 
-inline int min(const int a, const int b) { return (a < b) ? a : b; }
+M3i::M3i() { data = new Data(); }
 
-typedef const std::lock_guard<std::mutex> lock_guard;
+M3i::M3i(const int x, const int y, const int z) {
+  if (x <= 0 || y <= 0 || z <= 0) {
+    throw std::out_of_range("X, y, z have to be > 0");
+  }
+  int shape[3] = {x, y, z};
+  data = new Data(new int[x * y * z], shape, 1);
+}
 
-M3i::M3i() = default;
+M3i::M3i(const int x, const int y, const int z, const int default_value) {
+  if (x <= 0 || y <= 0 || z <= 0) {
+    throw std::out_of_range("X, y, z have to be > 0");
+  }
+  int shape[3] = {x, y, z};
+  data = new Data(new int[x * y * z], shape, 1);
+  for (int i = 0; i < x * y * z; ++i) {
+    data->values[i] = default_value;
+  }
+}
 
-// {{{123}, {123}}, {{123}, {123}}, {{123}, {123}}, ...}
-M3i::M3i(
-    std::initializer_list<std::initializer_list<std::initializer_list<int>>>
-        ilist) {
-  tensor = new Tensor();
-  tensor->shape[0] = ilist.size();
-  tensor->shape[1] = ilist.begin()->size();
-  tensor->shape[2] = ilist.begin()->begin()->size();
-  tensor->capacity = tensor->shape[0] * tensor->shape[1] * tensor->shape[2];
-  tensor->data = new int[tensor->capacity];
-
-  int dumb_iter = 0;
-  for (auto &sublist : ilist) {
-    for (auto &subsublist : sublist) {
-      for (auto &value : subsublist) {
-        tensor->data[dumb_iter++] = value;
+M3i::M3i(const std::initializer_list<
+         std::initializer_list<std::initializer_list<int>>>& list) {
+  int shape[3] = {(int)list.size(), (int)list.begin()->size(),
+                  (int)list.begin()->begin()->size()};
+  data = new Data(new int[shape[0] * shape[1] * shape[2]], shape, 1);
+  int position = 0;
+  for (auto i : list) {
+    for (auto j : i) {
+      for (auto value : j) {
+        data->values[position] = value;
+        ++position;
       }
     }
   }
 }
 
-M3i::M3i(int d0, int d1, int d2) {
-  tensor = new Tensor();
-  tensor->shape[0] = d0;
-  tensor->shape[1] = d1;
-  tensor->shape[2] = d2;
-  tensor->capacity = d0 * d1 * d2;
-  CheckDims();
-  tensor->data = new int[tensor->capacity];
+M3i::M3i(const M3i& other) {
+  data = other.data;
+  data->ref_counter++;
 }
 
-M3i::M3i(int d0, int d1, int d2, int fill) {
-  tensor = new Tensor();
-  tensor->shape[0] = d0;
-  tensor->shape[1] = d1;
-  tensor->shape[2] = d2;
-  tensor->capacity = d0 * d1 * d2;
-  CheckDims();
-  tensor->data = new int[tensor->capacity];
-
-  if (fill == 0) {
-    std::memset(tensor->data, 0, tensor->capacity * sizeof(int));
-    return;
-  };
-
-  for (int i = 0; i < tensor->capacity; ++i) tensor->data[i] = fill;
-}
-
-// легкая копия(подсчет ссылок)
-M3i::M3i(const M3i &other) : tensor(other.tensor) { ++tensor->ref_counter; }
-
-// легкая копия(подсчет ссылок)
-M3i &M3i::operator=(const M3i &other) {
-  free();
-  tensor = other.tensor;
-  ++tensor->ref_counter;
+M3i& M3i::operator=(const M3i& other) {
+  deleteCurrent();
+  data = other.data;
+  data->ref_counter++;
   return *this;
 }
 
-M3i::M3i(M3i &&other) : tensor(other.tensor) { other.tensor = nullptr; }
+M3i::M3i(M3i&& other) {
+  data = other.data;
+  other.data = nullptr;
+}
 
-M3i &M3i::operator=(M3i &&other) {
-  if (this == &other) {
-    return *this;
-  }
-
-  free();
-  tensor = other.tensor;
-  other.tensor = nullptr;
+M3i& M3i::operator=(M3i&& other) {
+  deleteCurrent();
+  data = other.data;
+  other.data = nullptr;
   return *this;
 }
 
-M3i::~M3i() { free(); }
+M3i::~M3i() { deleteCurrent(); }
 
-// полная копия данных
 M3i M3i::Clone() const {
-  lock_guard(tensor->mutex);
-  M3i ret(tensor->shape[0], tensor->shape[1], tensor->shape[2]);
-
-  memcpy(ret.tensor->data, tensor->data, tensor->capacity);
-  return ret;
-}
-
-// except: хотя бы один из индексов меньше нуля или больше
-// соответствующей размерности
-M3i &M3i::Resize(int d0, int d1, int d2) {
-  CheckDims(d0, d1, d2);
-  lock_guard(tensor->mutex);
-  int *buffer = new int[d0 * d1 * d2]();
-
-  for (int i = 0; i < min(tensor->shape[0], d0); ++i) {
-    for (int j = 0; j < min(tensor->shape[1], d1); ++j) {
-      for (int k = 0; k < min(tensor->shape[2], d2); ++k) {
-        buffer[i * d1 * d2 + j * d2 + k] = this->At(i, j, k);
+  std::lock_guard<std::mutex> lock(data->mutex);
+  M3i copy(data->shape[0], data->shape[1], data->shape[2]);
+  for (int x = 0; x < data->shape[0]; ++x) {
+    for (int y = 0; y < data->shape[1]; ++y) {
+      for (int z = 0; z < data->shape[2]; ++z) {
+        copy.At(x, y, z) = At(x, y, z);
       }
     }
   }
+  return copy;
+}
 
-  delete[] tensor->data;
-  tensor->shape[0] = d0;
-  tensor->shape[1] = d1;
-  tensor->shape[2] = d2;
-  tensor->capacity = d0 * d1 * d2;
-  tensor->data = buffer;
-
+M3i& M3i::Resize(const int x, const int y, const int z) {
+  std::lock_guard<std::mutex> lock(data->mutex);
+  if (x <= 0 || y <= 0 || z <= 0) {
+    throw std::out_of_range("X, y, z have to be > 0");
+  }
+  int* old_values = data->values;
+  int old_shape[3] = {data->shape[0], data->shape[1], data->shape[2]};
+  data->shape[0] = x;
+  data->shape[1] = y;
+  data->shape[2] = z;
+  data->values = new int[x * y * z];
+  memset(data->values, 0, x * y * z * sizeof(int));
+  for (int i = 0; i < x; ++i) {
+    for (int j = 0; j < y; ++j) {
+      for (int k = 0; k < z; ++k) {
+        if (i >= old_shape[0] || j >= old_shape[1] || k >= old_shape[2]) {
+          At(i, j, k) = 0;
+        } else {
+          At(i, j, k) = old_values[i * old_shape[1] * old_shape[2] +
+                                   j * old_shape[2] + k];
+        }
+      }
+    }
+  }
+  if (!old_values) {
+    delete[] old_values;
+  }
   return *this;
 }
 
-// except: хотя бы один из индексов меньше нуля или больше
-// соответствующей размерности
-int &M3i::At(int i, int j, int k) {
-  CheckIndexes(i, j, k);
-  return tensor->data[i * tensor->shape[1] * tensor->shape[2] +
-                      j * tensor->shape[2] + k];
+int M3i::At(const int x, const int y, const int z) const {
+  if (x >= Size(0) || x < 0 || y >= Size(1) || y < 0 || z >= Size(2) || z < 0) {
+    throw std::out_of_range("Invalid coordinates in At");
+  }
+  return data
+      ->values[x * (data->shape[1] * data->shape[2]) + y * data->shape[2] + z];
 }
 
-// except: хотя бы один из индексов меньше нуля или больше
-// соответствующей размерности
-int M3i::At(int i, int j, int k) const {
-  CheckIndexes(i, j, k);
-  return tensor->data[i * tensor->shape[1] * tensor->shape[2] +
-                      j * tensor->shape[2] + k];
+int& M3i::At(const int x, const int y, const int z) {
+  if (x >= Size(0) || x < 0 || y >= Size(1) || y < 0 || z >= Size(2) || z < 0) {
+    throw std::out_of_range("Invalid coordinates in At");
+  }
+  return data
+      ->values[x * (data->shape[1] * data->shape[2]) + y * data->shape[2] + z];
 }
 
-// получение размера по измерению 0, 1, 2
-// except: dim < 0 or dim > 2
-int M3i::Size(int dim) const {
-  if (dim < 0 || dim > 2) {
-    throw std::invalid_argument("dim must be between 0 and 2");
+int M3i::Size(const int dim) const {
+  if (dim > 2 || dim < 0) {
+    throw std::out_of_range("Dim in Size is in {0, 1, 2}");
   }
-  return tensor->shape[dim];
+  return data->shape[dim];
 }
 
-// заполнение одним и тем же значением
-void M3i::Fill(int val) {
-  lock_guard(tensor->mutex);
-  for (int i = 0; i < tensor->capacity; ++i) tensor->data[i] = val;
-}
-
-std::ostream &M3i::WriteTo(std::ostream &out) const {
-  lock_guard(tensor->mutex);
-
-  out << "size: " << tensor->shape[0] << " " << tensor->shape[1] << " "
-      << tensor->shape[2] << std::endl;
-  for (int i = 0; i < tensor->shape[0]; ++i) {
-    for (int j = 0; j < tensor->shape[1]; ++j) {
-      for (int k = 0; k < tensor->shape[2]; ++k) {
-        out << this->At(i, j, k) << " ";
-      }
-      out << std::endl;
-    }
-    out << std::endl;
-  }
-  return out;
-}
-
-std::istream &M3i::ReadFrom(std::istream &in) {
-  if (tensor != nullptr) {
-    lock_guard(tensor->mutex);
-    free();
-  }
-
-  std::string must_be_size_string;
-  in >> must_be_size_string;
-  if (must_be_size_string != "size:") {
-    in.setstate(std::ios_base::failbit);
-    return in;
-  }
-
-  int dims[3];
-  in >> dims[0] >> dims[1] >> dims[2];
-
-  if (dims[0] <= 0 || dims[1] <= 0 || dims[2] <= 0) {
-    in.setstate(std::ios_base::failbit);
-    return in;
-  }
-
-  M3i new_me = M3i(dims[0], dims[1], dims[2]);
-
-  for (int i = 0; i < dims[0]; ++i) {
-    for (int j = 0; j < dims[1]; ++j) {
-      for (int k = 0; k < dims[2]; ++k) {
-        in >> new_me.tensor->data[i * dims[1] * dims[2] + j * dims[2] + k];
+void M3i::Fill(const int value) {
+  std::lock_guard<std::mutex> lock(data->mutex);
+  for (int x = 0; x < Size(0); ++x) {
+    for (int y = 0; y < Size(1); ++y) {
+      for (int z = 0; z < Size(2); ++z) {
+        At(x, y, z) = value;
       }
     }
   }
-
-  *this = new_me;
-
-  return in;
 }
 
-std::istream &operator>>(std::istream &in, M3i &m) { return m.ReadFrom(in); }
-
-std::ostream &operator<<(std::ostream &out, const M3i &m) {
-  return m.WriteTo(out);
-}
-
-void M3i::CheckDims() {
-  if (tensor->shape[0] <= 0 || tensor->shape[1] <= 0 || tensor->shape[2] <= 0) {
-    throw std::invalid_argument("dimensions must be above zero");
+void M3i::deleteCurrent() {
+  if (data != nullptr) {
+    --data->ref_counter;
+    if (data->ref_counter == 0) {
+      if (data->values != nullptr) {
+        delete[] data->values;
+      }
+      delete data;
+    }
   }
 }
 
-void M3i::CheckDims(int d0, int d1, int d2) const {
-  if (d0 <= 0 || d1 <= 0 || d2 <= 0) {
-    throw std::invalid_argument("dimensions must be above zero");
+std::istream& operator>>(std::istream& istrm, M3i& m) {
+  int x = 0;
+  int y = 0;
+  int z = 0;
+  istrm >> x >> y >> z;
+  m.Resize(x, y, z);
+  for (int i = 0; i < m.Size(0); ++i) {
+    for (int j = 0; j < m.Size(1); ++j) {
+      for (int k = 0; k < m.Size(2); ++k) {
+        istrm >> m.At(i, j, k);
+      }
+    }
   }
+  return istrm;
 }
 
-void M3i::CheckIndexes(int d0, int d1, int d2) const {
-  if (d0 < 0 || d1 < 0 || d2 < 0 || tensor->shape[0] <= d0 ||
-      tensor->shape[1] <= d1 || tensor->shape[2] <= d2) {
-    throw std::out_of_range("index(es) out of range");
+std::ostream& operator<<(std::ostream& ostrm, const M3i& m) {
+  ostrm << m.Size(0) << " " << m.Size(1) << " " << m.Size(2) << "\n";
+  for (int i = 0; i < m.Size(0); ++i) {
+    for (int j = 0; j < m.Size(1); ++j) {
+      for (int k = 0; k < m.Size(2); ++k) {
+        ostrm << m.At(i, j, k) << " ";
+      }
+      ostrm << "\n";
+    }
+    ostrm << "\n";
   }
-}
-
-void M3i::free() {
-  if (tensor == nullptr) return;
-
-  lock_guard(tensor->mutex);
-
-  if (--tensor->ref_counter == 0) {
-    delete[] tensor->data;
-    delete tensor;
-  }
-
-  tensor = nullptr;
+  return ostrm;
 }
