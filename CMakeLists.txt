@@ -7,6 +7,8 @@ list(LENGTH RELS_LIST RELS_COUNT)
 math(EXPR RELS_END "${RELS_COUNT} - 1")
 message(STATUS "[M3i_STATUS] Found realisatinos [0..=${RELS_END}]")
 
+set (CMAKE_CXX_STANDARD 11)
+
 foreach(i RANGE 0 ${RELS_END})
     message(STATUS "[M3i_STATUS] Working with src/rels/${i}")
     message(STATUS "[M3i_STATUS] Adding library m3i_${i}")
