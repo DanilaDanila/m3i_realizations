@@ -1,4 +1,4 @@
-//int *** + memset
+// int *** + memset
 
 #ifndef M3I_H
 #define M3I_H
@@ -68,9 +68,9 @@ class M3i {
   struct Tensor {
     int shape[3] = {0};
     int capacity = 0;
-    int*** data = nullptr;
+    int ***data = nullptr;
     std::mutex mutex;
-    std::atomic_int16_t ref_counter{1};
+    std::atomic<std::int16_t> ref_counter{1};
   } *tensor = nullptr;
 };
 
